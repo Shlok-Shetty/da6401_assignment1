@@ -1,24 +1,8 @@
-"""
-optimizers.py
--------------
-Gradient-based optimizers for MLP training.
-
-All optimizers expose:
-    step(layers, weight_decay) -> updates layer.W and layer.b in-place
-
-Implemented:
-    SGD        – mini-batch gradient descent
-    Momentum   – SGD with classical momentum
-    NAG        – Nesterov Accelerated Gradient
-    RMSProp    – Root Mean Squared Propagation
-    Adam       – Adaptive Moment Estimation
-    Nadam      – Adam with Nesterov momentum
-"""
 
 import numpy as np
 
 
-# ── Base ──────────────────────────────────────────────────────────────────────
+
 
 class BaseOptimizer:
     def __init__(self, learning_rate: float):
@@ -35,7 +19,6 @@ class BaseOptimizer:
         return layers
 
 
-# ── SGD ───────────────────────────────────────────────────────────────────────
 
 class SGD(BaseOptimizer):
     """
@@ -57,7 +40,7 @@ class SGD(BaseOptimizer):
         return f"SGD(lr={self.lr})"
 
 
-# ── Momentum ──────────────────────────────────────────────────────────────────
+
 
 class Momentum(BaseOptimizer):
     """
@@ -91,14 +74,10 @@ class Momentum(BaseOptimizer):
         return f"Momentum(lr={self.lr}, beta={self.beta})"
 
 
-# ── NAG ───────────────────────────────────────────────────────────────────────
+
 
 class NAG(BaseOptimizer):
-    """
-    Nesterov Accelerated Gradient.
-    Training loop must call apply_lookahead() before forward pass,
-    undo_lookahead() before backward, then step() for the velocity update.
-    """
+    
 
     def __init__(self, learning_rate: float = 0.01, beta: float = 0.9):
         super().__init__(learning_rate)
@@ -113,14 +92,14 @@ class NAG(BaseOptimizer):
                 self.v_b[i] = np.zeros_like(layer.b)
 
     def apply_lookahead(self, layers: list):
-        """Temporarily shift weights to W_lookahead = W - lr*beta*v."""
+        
         self._init_velocities(layers)
         for i, layer in enumerate(layers):
             layer.W -= self.lr * self.beta * self.v_W[i]
             layer.b -= self.lr * self.beta * self.v_b[i]
 
     def undo_lookahead(self, layers: list):
-        """Restore weights to original position."""
+        
         for i, layer in enumerate(layers):
             layer.W += self.lr * self.beta * self.v_W[i]
             layer.b += self.lr * self.beta * self.v_b[i]
@@ -138,15 +117,10 @@ class NAG(BaseOptimizer):
         return f"NAG(lr={self.lr}, beta={self.beta})"
 
 
-# ── RMSProp ───────────────────────────────────────────────────────────────────
+
 
 class RMSProp(BaseOptimizer):
-    """
-    RMSProp.
-        s_W <- rho * s_W + (1 - rho) * (dL/dW)^2
-        W   <- W - lr / sqrt(s_W + eps) * dL/dW
-    """
-
+   
     def __init__(self, learning_rate: float = 0.001,
                  rho: float = 0.9, epsilon: float = 1e-8):
         super().__init__(learning_rate)
@@ -176,16 +150,9 @@ class RMSProp(BaseOptimizer):
         return f"RMSProp(lr={self.lr}, rho={self.rho})"
 
 
-# ── Adam ──────────────────────────────────────────────────────────────────────
 
 class Adam(BaseOptimizer):
-    """
-    Adam – Adaptive Moment Estimation.
-        m  <- beta1*m + (1-beta1)*g
-        v  <- beta2*v + (1-beta2)*g^2
-        m^ = m/(1-beta1^t),  v^ = v/(1-beta2^t)
-        W  <- W - lr * m^ / (sqrt(v^) + eps)
-    """
+    
 
     def __init__(self, learning_rate: float = 0.001,
                  beta1: float = 0.9, beta2: float = 0.999,
@@ -226,13 +193,10 @@ class Adam(BaseOptimizer):
         return f"Adam(lr={self.lr}, beta1={self.beta1}, beta2={self.beta2})"
 
 
-# ── Nadam ─────────────────────────────────────────────────────────────────────
+
 
 class Nadam(BaseOptimizer):
-    """
-    Nadam – Adam with Nesterov momentum.
-    Uses a Nesterov-corrected first-moment estimate in the weight update.
-    """
+   
 
     def __init__(self, learning_rate: float = 0.001,
                  beta1: float = 0.9, beta2: float = 0.999,
@@ -270,7 +234,7 @@ class Nadam(BaseOptimizer):
             v_hat_W = self.v_W[i] / (1 - self.beta2 ** self.t)
             v_hat_b = self.v_b[i] / (1 - self.beta2 ** self.t)
 
-            # Nesterov: look one step ahead in the first-moment direction
+            
             nesterov_W = (self.beta1 * m_hat_W +
                           (1 - self.beta1) / (1 - self.beta1 ** self.t) * layer.grad_W)
             nesterov_b = (self.beta1 * m_hat_b +
@@ -283,7 +247,6 @@ class Nadam(BaseOptimizer):
         return f"Nadam(lr={self.lr}, beta1={self.beta1}, beta2={self.beta2})"
 
 
-# ── Registry ──────────────────────────────────────────────────────────────────
 
 OPTIMIZER_MAP = {
     "sgd":      SGD,
@@ -302,4 +265,5 @@ def get_optimizer(name: str, learning_rate: float, **kwargs):
         raise ValueError(
             f"Unknown optimizer '{name}'. Choose from {list(OPTIMIZER_MAP.keys())}"
         )
+
     return OPTIMIZER_MAP[name](learning_rate=learning_rate, **kwargs)
