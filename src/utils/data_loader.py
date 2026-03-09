@@ -1,17 +1,7 @@
-"""
-data_loader.py
---------------
-Data Loading and Preprocessing for MNIST and Fashion-MNIST.
-
-Provides:
-    load_data(dataset, val_split, seed) -> (X_train, y_train, X_val, y_val, X_test, y_test)
-    log_sample_images(wandb_run, X, y, dataset) -> logs a W&B Table with class samples
-"""
 
 import numpy as np
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
 
 FASHION_MNIST_LABELS = [
     "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
@@ -39,29 +29,15 @@ def _preprocess(X: np.ndarray) -> np.ndarray:
     return X.reshape(X.shape[0], -1).astype(np.float64) / 255.0
 
 
-# ── public API ────────────────────────────────────────────────────────────────
+
 
 def load_data(dataset: str = "mnist",
               val_split: float = 0.1,
               seed: int = 42):
-    """
-    Load and preprocess dataset.
-
-    Parameters
-    ----------
-    dataset   : 'mnist' or 'fashion_mnist'
-    val_split : fraction of training data to reserve for validation
-    seed      : random seed for reproducible split
-
-    Returns
-    -------
-    X_train, y_train : training split
-    X_val,   y_val   : validation split
-    X_test,  y_test  : held-out test set (never used for training)
-    """
+   
     X_train_raw, y_train_raw, X_test_raw, y_test_raw = _load_keras_dataset(dataset)
 
-    # Preprocess
+    
     X_all = _preprocess(X_train_raw)
     y_all = y_train_raw.astype(np.int64)
     X_test = _preprocess(X_test_raw)
@@ -86,17 +62,7 @@ def load_data(dataset: str = "mnist",
 
 def log_sample_images(wandb_run, X_raw, y_raw, dataset: str = "mnist",
                       samples_per_class: int = 5):
-    """
-    Log a W&B Table with sample images from each class (Q2.1).
-
-    Parameters
-    ----------
-    wandb_run       : active W&B run
-    X_raw           : (N, 28, 28) uint8 raw images (before normalisation)
-    y_raw           : (N,) integer labels
-    dataset         : 'mnist' or 'fashion_mnist'
-    samples_per_class : number of images to log per class
-    """
+    
     import wandb
 
     labels = FASHION_MNIST_LABELS if dataset == "fashion_mnist" else MNIST_LABELS
@@ -113,4 +79,5 @@ def log_sample_images(wandb_run, X_raw, y_raw, dataset: str = "mnist",
         table.add_data(cls, labels[cls], *images)
 
     wandb_run.log({"class_samples": table})
+
     print(f"Logged {samples_per_class} samples per class to W&B.")
