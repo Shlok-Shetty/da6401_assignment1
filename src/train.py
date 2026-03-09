@@ -1,12 +1,4 @@
-"""
-train.py
---------
-Main training script for the MLP assignment.
 
-Usage example:
-    python train.py -d mnist -e 10 -b 64 -lr 0.001 -o adam -nhl 3 -sz 128 128 128
-                    -a relu -w_i xavier -l cross_entropy -wp my_wandb_project
-"""
 
 import argparse
 import json
@@ -21,7 +13,7 @@ from ann.neural_network import NeuralNetwork
 from utils.data_loader import load_data, log_sample_images
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+
 
 def parse_arguments():
     """Parse command-line arguments."""
@@ -102,7 +94,7 @@ def parse_arguments():
     return args
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def set_seed(seed: int):
     np.random.seed(seed)
@@ -131,13 +123,13 @@ def save_model(model: NeuralNetwork, config, model_path: str, config_path: str):
     print(f"Model saved to '{model_path}', config to '{config_path}'")
 
 
-# ── main ─────────────────────────────────────────────────────────────────────
+
 
 def main():
     args = parse_arguments()
     set_seed(args.seed)
 
-    # ── W&B ──────────────────────────────────────────────────────────────
+    
     wandb_run = None
     if args.wandb_project:
         try:
@@ -151,12 +143,12 @@ def main():
         except Exception as e:
             print(f"[WARNING] Could not initialise W&B: {e}")
 
-    # ── Data ──────────────────────────────────────────────────────────────
+   
     X_train, y_train, X_val, y_val, X_test, y_test = load_data(
         dataset=args.dataset, val_split=args.val_split, seed=args.seed
     )
 
-    # Log class samples (Q2.1)
+    
     if wandb_run and args.log_class_samples:
         from keras.datasets import mnist, fashion_mnist
         if args.dataset == "mnist":
@@ -165,11 +157,11 @@ def main():
             (X_raw, y_raw), _ = fashion_mnist.load_data()
         log_sample_images(wandb_run, X_raw, y_raw, dataset=args.dataset)
 
-    # ── Model ─────────────────────────────────────────────────────────────
+    
     model = NeuralNetwork(args)
     print(model)
 
-    # ── Train ─────────────────────────────────────────────────────────────
+    
     history = model.train(
         X_train, y_train,
         X_val=X_val, y_val=y_val,
@@ -177,7 +169,7 @@ def main():
         log_gradients=args.log_gradients,
     )
 
-    # ── Final evaluation on test set ──────────────────────────────────────
+    
     from sklearn.metrics import f1_score, precision_score, recall_score
 
     test_loss, test_acc, test_logits = model.evaluate(X_test, y_test)
@@ -203,7 +195,7 @@ def main():
             "test_recall":    recall,
         })
 
-    # ── Save best model ───────────────────────────────────────────────────
+    
     save_model(model, args, args.model_save_path, args.config_save_path)
 
     if wandb_run:
@@ -214,4 +206,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
