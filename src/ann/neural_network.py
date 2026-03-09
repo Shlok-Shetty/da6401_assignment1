@@ -1,9 +1,3 @@
-"""
-neural_network.py
------------------
-Main Neural Network Model class.
-Handles forward and backward propagation loops across all layers.
-"""
 
 import numpy as np
 from ann.neural_layer import NeuralLayer
@@ -19,24 +13,13 @@ def _softmax(logits: np.ndarray) -> np.ndarray:
 
 
 class NeuralNetwork:
-    """
-    Fully-connected MLP.
-
-    Parameters
-    ----------
-    cli_args : argparse.Namespace
-        Must contain:
-          dataset, epochs, batch_size, loss, optimizer, weight_decay,
-          learning_rate, num_layers, hidden_size (list[int]),
-          activation, weight_init
-        Optional: wandb_project, model_save_path
-    """
+    
 
     def __init__(self, cli_args):
         self.args = cli_args
         self.layers: list = []
 
-        # ── build architecture ─────────────────────────────────────────────
+       
         input_dim   = 784       # MNIST / Fashion-MNIST
         num_classes = 10
 
@@ -53,17 +36,17 @@ class NeuralNetwork:
             )
             prev_dim = h_size
 
-        # Output layer – linear (logits); softmax applied in loss/eval
+        
         self.layers.append(
             NeuralLayer(prev_dim, num_classes,
                         activation="linear",
                         weight_init=weight_init)
         )
 
-        # ── loss ──────────────────────────────────────────────────────────
+        
         self.loss_fn = get_loss(cli_args.loss)
 
-        # ── optimiser ─────────────────────────────────────────────────────
+        
         opt_name = cli_args.optimizer.lower()
         lr       = cli_args.learning_rate
         if opt_name in ("momentum", "nag"):
@@ -81,7 +64,7 @@ class NeuralNetwork:
         self.grad_W = None
         self.grad_b = None
 
-    # ── forward ───────────────────────────────────────────────────────────
+   
 
     def forward(self, X: np.ndarray):
         """
@@ -101,7 +84,7 @@ class NeuralNetwork:
             a = layer.forward(a)
         return a
 
-    # ── backward ──────────────────────────────────────────────────────────
+   
 
     def backward(self, y_true: np.ndarray, y_pred: np.ndarray):
         """
@@ -117,7 +100,7 @@ class NeuralNetwork:
         grad_W : object array  – index 0 = last layer, … last index = first layer
         grad_b : object array  – same ordering
         """
-        # Gradient of loss w.r.t. logits (last layer pre-activation)
+        
         delta = self.loss_fn.gradient(y_pred, y_true)  # (batch, C)
 
         grad_W_list = []
@@ -128,7 +111,7 @@ class NeuralNetwork:
             grad_W_list.append(layer.grad_W)
             grad_b_list.append(layer.grad_b)
 
-        # Store as object arrays so numpy doesn't try to broadcast shapes
+        
         self.grad_W = np.empty(len(grad_W_list), dtype=object)
         self.grad_b = np.empty(len(grad_b_list), dtype=object)
         for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
@@ -137,19 +120,13 @@ class NeuralNetwork:
 
         return self.grad_W, self.grad_b
 
-    # ── train ─────────────────────────────────────────────────────────────
+    
 
     def train(self, X_train: np.ndarray, y_train: np.ndarray,
               X_val: np.ndarray = None, y_val: np.ndarray = None,
               epochs: int = None, batch_size: int = None,
               wandb_run=None, log_gradients: bool = False):
-        """
-        Full mini-batch training loop.
-
-        Returns
-        -------
-        history : dict  keys: train_loss, train_acc, val_loss, val_acc
-        """
+        
         epochs     = epochs     or self.args.epochs
         batch_size = batch_size or self.args.batch_size
         n          = X_train.shape[0]
@@ -226,7 +203,7 @@ class NeuralNetwork:
 
         return history
 
-    # ── evaluate ──────────────────────────────────────────────────────────
+   
 
     def evaluate(self, X: np.ndarray, y: np.ndarray):
         """
@@ -241,7 +218,7 @@ class NeuralNetwork:
         accuracy  = float(np.mean(np.argmax(logits, axis=1) == y))
         return loss, accuracy, logits
 
-    # ── serialisation ─────────────────────────────────────────────────────
+    
 
     def get_weights(self) -> dict:
         d = {}
@@ -261,4 +238,5 @@ class NeuralNetwork:
 
     def __repr__(self):
         layer_str = "\n  ".join(repr(l) for l in self.layers)
+
         return f"NeuralNetwork(\n  {layer_str}\n)"
